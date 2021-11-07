@@ -28,6 +28,11 @@ struct SquareBackground: View {
                     dashPhase: isDropTarget ? 0 : 4)
     }
     
+    var nonEmptyStrokeColor: Color {
+        if isDropTarget { return .blue }
+        return Color.primary.opacity(0.1)
+    }
+    
     var fillColor: Color {
         if isDropTarget || !isEmpty {
             if colorScheme == .light {
@@ -53,13 +58,14 @@ struct SquareBackground: View {
         } else {
             RoundedRectangle(cornerRadius: 8)
                 .fill(fillColor)
-                .shadow(color: Color(white: 0).opacity(0.15), radius: 2, x: 0, y: 1)
+                .shadow(color: Color.black.opacity(colorScheme == .light ? 0.15 : 0.35),
+                        radius: colorScheme == .light ? 2 : 2.5,
+                        x: 0,
+                        y: colorScheme == .light ? 1 : 2)
                 .overlay(flash)
                 .overlay(
                     RoundedRectangle(cornerRadius: 8)
-                        .stroke(isDropTarget ? Color.blue : Color.black,
-                                lineWidth: isDropTarget ? 3 : 1)
-                        .opacity(isDropTarget ? 1 : 0.1)
+                        .stroke(nonEmptyStrokeColor, lineWidth: isDropTarget ? 3 : 1)
                 )
         }
     }
