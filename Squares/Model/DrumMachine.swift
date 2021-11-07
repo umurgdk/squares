@@ -25,8 +25,8 @@ struct GridPoisition {
 
 @MainActor
 class DrumMachine: ObservableObject {
-    @Published public private(set) var audios: [[Audio]]
-    @Published public private(set) var nowPlaying: [Audio.ID: TimeInterval] = [:]
+    @Published public private(set) var audios: [[Sample]]
+    @Published public private(set) var nowPlaying: [Sample.ID: TimeInterval] = [:]
     
     private let waveformGenerator = WaveformGenerator()
     private let audioEngine = AudioEngine()
@@ -35,7 +35,7 @@ class DrumMachine: ObservableObject {
     public let size: GridSize
     public init(size: GridSize = .macbookPro13) {
         self.size = size
-        audios = (0..<size.rows).map { _ in (0..<size.columns).map { _ in Audio() } }
+        audios = (0..<size.rows).map { _ in (0..<size.columns).map { _ in Sample() } }
         
         audioEngine.output = mixer
         try! audioEngine.start()
@@ -51,13 +51,13 @@ class DrumMachine: ObservableObject {
         }
     }
     
-    public func play(_ audio: Audio) {
+    public func play(_ audio: Sample) {
         guard case let .ready(player) = audio.state else { return }
         nowPlaying[audio.id] = Date.now.timeIntervalSince1970
         player.play()
     }
     
-    public func removePlaying(_ audio: Audio) {
+    public func removePlaying(_ audio: Sample) {
         nowPlaying.removeValue(forKey: audio.id)
         guard case let .ready(player) = audio.state else { return }
         player.seek(time: 0)
@@ -88,7 +88,7 @@ class DrumMachine: ObservableObject {
                 
                 // TODO: Waveform is huge, needs to be downsampled and normalized
                 if let buffer = playerNode.buffer {
-                    let waveform = try await waveformGenerator.waveform(from: buffer, targetLength: 24)
+                    let waveform = try await waveformGenerator.waveform(from: buffer, targetLength: 32)
                     audio.waveform = .ready(waveform)
                     updateAudio(audio, at: position)
                 }
@@ -98,7 +98,7 @@ class DrumMachine: ObservableObject {
         }
     }
     
-    private func updateAudio(_ audio: Audio, at position: GridPoisition) {
+    private func updateAudio(_ audio: Sample, at position: GridPoisition) {
         audios[position.row][position.column] = audio
     }
 }

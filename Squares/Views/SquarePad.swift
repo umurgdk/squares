@@ -11,7 +11,12 @@ import AudioKitUI
 struct SquarePad: View  {
     @ObservedObject var drumMachine: DrumMachine
     let position: GridPoisition
-    let audio: Audio
+    let audio: Sample
+    
+    var isEmpty: Bool {
+        if case .empty = audio.state { return true }
+        return false
+    }
     
     @State var isDropTarget = false
     @State var timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
@@ -29,7 +34,7 @@ struct SquarePad: View  {
     
     var body: some View {
         ZStack(alignment: .topLeading) {
-            SquareBackground(isDropTarget: isDropTarget, playProgress: playProgress)
+            SquareBackground(isEmpty: isEmpty, isDropTarget: isDropTarget, playProgress: playProgress)
             HStack {
                 Text(audio.name)
                     .font(.subheadline)
@@ -41,7 +46,7 @@ struct SquarePad: View  {
                 EmptyView()
             case .loading:
                 ProgressView().controlSize(.small)
-            case .ready(let player):
+            case .ready:
                 switch audio.waveform {
                 case .empty:
                     EmptyView()
@@ -86,6 +91,9 @@ struct SquarePad: View  {
 }
 
 struct SquareBackground: View {
+    @Environment(\.colorScheme) var colorScheme
+    
+    let isEmpty: Bool
     let isDropTarget: Bool
     let playProgress: Double?
     
@@ -94,11 +102,40 @@ struct SquareBackground: View {
             .fill(Color.primary.opacity(1 - (playProgress ?? 1)))
     }
     
+    var emptyStrokeStyle: StrokeStyle {
+        StrokeStyle(lineWidth: isDropTarget ? 3 : 1,
+                    lineCap: .butt,
+                    lineJoin: .round,
+                    miterLimit: 1,
+                    dash: isDropTarget ? [] : [4],
+                    dashPhase: isDropTarget ? 0 : 4)
+    }
+    
+    var fillColor: Color {
+        if isDropTarget || !isEmpty {
+            if colorScheme == .light {
+                return .white
+            } else {
+                return .black
+            }
+        }
+        
+        return .clear
+    }
+    
+    @ViewBuilder
     var body: some View {
-        GeometryReader { geom in
-            
+        if isEmpty {
             RoundedRectangle(cornerRadius: 8)
-                .fill(Color(nsColor: NSColor.windowBackgroundColor))
+                .stroke(isDropTarget ? Color.blue : Color.black.opacity(0.1), style: emptyStrokeStyle)
+                .background(
+                    RoundedRectangle(cornerRadius: 8)
+                        .fill(fillColor)
+                        .opacity(isDropTarget ? 1 : 0)
+                )
+        } else {
+            RoundedRectangle(cornerRadius: 8)
+                .fill(fillColor)
                 .shadow(color: Color(white: 0).opacity(0.15), radius: 2, x: 0, y: 1)
                 .overlay(flash)
                 .overlay(
@@ -107,6 +144,6 @@ struct SquareBackground: View {
                                 lineWidth: isDropTarget ? 3 : 1)
                         .opacity(isDropTarget ? 1 : 0.1)
                 )
-            }
+        }
     }
 }

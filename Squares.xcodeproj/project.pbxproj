@@ -13,7 +13,7 @@
 		A9C72C8D273691B7007C2645 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C72C8C273691B7007C2645 /* Assets.xcassets */; };
 		A9C72C90273691B7007C2645 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C72C8F273691B7007C2645 /* Preview Assets.xcassets */; };
 		A9C72C98273691D5007C2645 /* DrumMachine.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72C97273691D5007C2645 /* DrumMachine.swift */; };
-		A9C72C9A2736920A007C2645 /* Audio.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72C992736920A007C2645 /* Audio.swift */; };
+		A9C72C9A2736920A007C2645 /* Sample.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72C992736920A007C2645 /* Sample.swift */; };
 		A9C72C9D273698C3007C2645 /* DrumMachine+Environment.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72C9C273698C3007C2645 /* DrumMachine+Environment.swift */; };
 		A9C72CA02736A2D2007C2645 /* WaveformGenerator.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72C9F2736A2D2007C2645 /* WaveformGenerator.swift */; };
 		A9C72CA22736AC68007C2645 /* SquarePad.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C72CA12736AC68007C2645 /* SquarePad.swift */; };
@@ -31,7 +31,7 @@
 		A9C72C8F273691B7007C2645 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
 		A9C72C91273691B7007C2645 /* Squares.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Squares.entitlements; sourceTree = "<group>"; };
 		A9C72C97273691D5007C2645 /* DrumMachine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DrumMachine.swift; sourceTree = "<group>"; };
-		A9C72C992736920A007C2645 /* Audio.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Audio.swift; sourceTree = "<group>"; };
+		A9C72C992736920A007C2645 /* Sample.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sample.swift; sourceTree = "<group>"; };
 		A9C72C9C273698C3007C2645 /* DrumMachine+Environment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "DrumMachine+Environment.swift"; sourceTree = "<group>"; };
 		A9C72C9F2736A2D2007C2645 /* WaveformGenerator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveformGenerator.swift; sourceTree = "<group>"; };
 		A9C72CA12736AC68007C2645 /* SquarePad.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquarePad.swift; sourceTree = "<group>"; };
@@ -93,7 +93,7 @@
 			children = (
 				A9C72C97273691D5007C2645 /* DrumMachine.swift */,
 				A9C72C9C273698C3007C2645 /* DrumMachine+Environment.swift */,
-				A9C72C992736920A007C2645 /* Audio.swift */,
+				A9C72C992736920A007C2645 /* Sample.swift */,
 				A9C72C9F2736A2D2007C2645 /* WaveformGenerator.swift */,
 			);
 			path = Model;
@@ -189,7 +189,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				A9C72C9D273698C3007C2645 /* DrumMachine+Environment.swift in Sources */,
-				A9C72C9A2736920A007C2645 /* Audio.swift in Sources */,
+				A9C72C9A2736920A007C2645 /* Sample.swift in Sources */,
 				A9C72CA22736AC68007C2645 /* SquarePad.swift in Sources */,
 				A9C72CA02736A2D2007C2645 /* WaveformGenerator.swift in Sources */,
 				A9C72C8B273691B5007C2645 /* ContentView.swift in Sources */,

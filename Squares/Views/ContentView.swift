@@ -9,6 +9,8 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject var drumMachine: DrumMachine
+    public let trackPadEnabled: Bool
+    
     var body: some View {
         GeometryReader { geom in
             VStack(spacing: 8) {
@@ -25,6 +27,7 @@ struct ContentView: View {
             .padding()
             .overlay(
                 TouchInterceptor { touch in
+                    guard trackPadEnabled else { return }
                     let y = (1 - touch.normalizedPosition.y)
                     let x = touch.normalizedPosition.x
                     
@@ -45,10 +48,10 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         let drumMachine = DrumMachine()
         return Group {
-            SquarePad(drumMachine: drumMachine, position: GridPoisition(column: 0, row: 0   ), audio: Audio(state: .empty))
+            SquarePad(drumMachine: drumMachine, position: GridPoisition(column: 0, row: 0   ), audio: Sample(state: .empty))
                 .padding()
                 .frame(width: 100, height: 100, alignment: .center)
-            ContentView(drumMachine: DrumMachine())
+            ContentView(drumMachine: DrumMachine(), trackPadEnabled: false)
                 .frame(width: 400, height: 270, alignment: .center)
         }
     }
