@@ -23,13 +23,18 @@ struct SquarePad: View  {
     @State var playTime: Double? = nil
     var playProgress: Double? {
         guard
-            case let .ready(player) = slot,
+            case let .ready(sample) = slot,
             let playTime = playTime
         else {
             return nil
         }
 
-        return min(playTime, player.duration) / player.duration
+        return min(playTime, sample.duration) / sample.duration
+    }
+    
+    var nowPlaying: TimeInterval? {
+        guard case let .ready(sample) = slot else { return nil }
+        return drumMachine.nowPlaying[sample.id]
     }
     
     var body: some View {
@@ -73,15 +78,15 @@ struct SquarePad: View  {
             
             return true
         }
-//        .onChange(of: drumMachine.nowPlaying[audio.id]) { isPlayingAt in
-//            if isPlayingAt == nil {
-//                playTime = nil
-//                self.timer.upstream.connect().cancel()
-//            } else {
-//                playTime = 0
-//                self.timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
-//            }
-//        }
+        .onChange(of: nowPlaying) { isPlayingAt in
+            if isPlayingAt == nil {
+                playTime = nil
+                self.timer.upstream.connect().cancel()
+            } else {
+                playTime = 0
+                self.timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
+            }
+        }
         .onReceive(timer) { _ in
             withAnimation {
                 playTime = playTime.map { $0 + 0.1 } ?? 0

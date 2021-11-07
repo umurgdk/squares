@@ -24,13 +24,14 @@ struct GridPoisition {
 }
 
 @MainActor
-class DrumMachine: ObservableObject {
+class DrumMachine: ObservableObject, SamplerTapDelegate {
     @Published public private(set) var slots: [[SampleSlot]]
     @Published public private(set) var nowPlaying: [Sample.ID: TimeInterval] = [:]
     
     private let waveformGenerator = WaveformGenerator()
     private let audioEngine = AudioEngine()
     private let mixer = Mixer()
+    private var samplerTaps: [Sample.ID: SamplerTap] = [:]
     
     public let size: GridSize
     public init(size: GridSize = .macbookPro13) {
@@ -54,16 +55,16 @@ class DrumMachine: ObservableObject {
     public func playSample(at position: GridPoisition) {
         if case let .ready(sample) = slots[position.row][position.column] {
             sample.sampler.play()
+            nowPlaying[sample.id] = Date.now.timeIntervalSince1970
         }
-    }
-    
-    public func removePlaying(_ sample: Sample) {
     }
     
     public func loadAudio(url: URL, at position: GridPoisition) {
         let slot = slots[position.row][position.column]
         if case let .ready(sample) = slot {
             mixer.removeInput(sample.sampler)
+            samplerTaps[sample.id]?.dispose()
+            samplerTaps.removeValue(forKey: sample.id)
         }
         
         Task {
@@ -76,6 +77,11 @@ class DrumMachine: ObservableObject {
                 let fileName = url.deletingPathExtension().pathComponents.last ?? ""
                 var sample = Sample(sampler: sampler, duration: audioFile.duration, name: fileName.uppercased())
                 updateSlot(.ready(sample), at: position)
+                
+                let tap = SamplerTap(input: sampler, sampleID: sample.id)
+                tap.delegate = self
+                samplerTaps[sample.id] = tap
+                tap.start()
                 
                 // TODO: Waveform is huge, needs to be downsampled and normalized
                 if let buffer = audioFile.toAVAudioPCMBuffer() {
@@ -92,5 +98,21 @@ class DrumMachine: ObservableObject {
     private func updateSlot(_ slot: SampleSlot, at position: GridPoisition) {
         slots[position.row][position.column] = slot
     }
+    
+    private func sampleWithID(_ id: Sample.ID) -> Sample? {
+        for slot in slots.flatMap({ $0 }) {
+            if case let .ready(sample) = slot, sample.id == id {
+                return sample
+            }
+        }
+        
+        return nil
+    }
+    
+    func samplerDidStopPlayingSample(id: Sample.ID) {
+        nowPlaying.removeValue(forKey: id)
+        if let sample = sampleWithID(id) {
+            print("Sample[\(sample.name)] did stop playing")
+        }
+    }
 }
-
