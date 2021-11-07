@@ -23,6 +23,22 @@ struct SquaresApp: App {
                                 .foregroundColor(isTrackpadEnabled ? .accentColor : .secondary)
                         }
                     }
+                    
+                    ToolbarItem(placement: .status) {
+                        Button {
+                            if drumMachine.isRecording {
+                                isTrackpadEnabled = false
+                                drumMachine.stopRecording()
+                            } else {
+                                isTrackpadEnabled = true
+                                drumMachine.startRecording()
+                            }
+                        } label: {
+                            Label(drumMachine.isRecording ? "Stop Recording" : "Start Recording",
+                                  systemImage: drumMachine.isRecording ? "stop.circle" : "record.circle")
+                                .foregroundColor(.red)
+                        }
+                    }
                 }
         }
         .onChange(of: scenePhase) { newValue in
@@ -30,3 +46,4 @@ struct SquaresApp: App {
         }
     }
 }
+

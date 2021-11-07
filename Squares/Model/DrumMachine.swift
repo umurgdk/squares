@@ -18,6 +18,8 @@ struct NowPlaying {
 
 @MainActor
 class DrumMachine: ObservableObject {
+    @Published public private(set) var isRecording = false
+    
     public let grid: SlotGrid
     public var slotChangePublisher: AnyPublisher<GridPosition, Never> { grid.slotChangePublisher }
     
@@ -27,6 +29,10 @@ class DrumMachine: ObservableObject {
     private let waveformGenerator = WaveformGenerator()
     private let audioEngine = AudioEngine()
     private let mixer = Mixer()
+    
+    private var recorder: NodeRecorder? {
+        didSet { isRecording = recorder != nil }
+    }
     
     public init(size: GridSize = .macbookPro13) {
         grid = SlotGrid(size: size)
@@ -71,6 +77,38 @@ class DrumMachine: ObservableObject {
             sample.sampler.play()
             samplePlayStartTimes[sample.id] = Date.now.timeIntervalSince1970
             nowPlayingSignal.send(NowPlaying(sampleID: sample.id, isPlaying: true))
+        }
+    }
+    
+    public func startRecording() {
+        do {
+            let format = AVAudioFormat(commonFormat: .pcmFormatFloat64, sampleRate: 44100, channels: 2, interleaved: true)!
+            let recordingDirectory = FileManager.default.temporaryDirectory
+            let recordingURL = recordingDirectory.appendingPathComponent("recording.caf")
+            let audioFile = try AVAudioFile(forWriting: recordingURL, settings: format.settings)
+            let recorder = try NodeRecorder(node: mixer, file: audioFile)
+            try recorder.reset()
+            try recorder.record()
+            self.recorder = recorder
+        } catch {
+            NSAlert(error: error).runModal()
+        }
+    }
+    
+    public func stopRecording() {
+        guard let recorder = recorder else { return }
+
+        recorder.stop()
+        self.recorder = nil
+        guard let file = recorder.audioFile else { return }
+        
+        let savePanel = NSSavePanel()
+        savePanel.allowedFileTypes = ["caf"]
+        guard savePanel.runModal() == .OK, let url = savePanel.url else { return }
+        do {
+            try FileManager.default.moveItem(at: file.url, to: url)
+        } catch {
+            NSAlert(error: error).runModal()
         }
     }
     
