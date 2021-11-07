@@ -10,10 +10,10 @@ import AudioKit
 
 struct Sample: Identifiable {
     let id: UUID = UUID()
+    let sampler: AppleSampler
+    let duration: TimeInterval
     var name: String = ""
-    var state: State = .empty
     var waveform: Waveform = .empty
     
-    enum State { case empty, loading(URL), ready(AudioPlayer) }
     enum Waveform { case empty, generating, ready([Float]) }
 }

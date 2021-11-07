@@ -19,7 +19,7 @@ struct ContentView: View {
                         ForEach(0..<drumMachine.size.columns) { col in
                             SquarePad(drumMachine: drumMachine,
                                       position: GridPoisition(column: col, row: row),
-                                      audio: drumMachine.audios[row][col])
+                                      slot: drumMachine.slots[row][col])
                         }
                     }
                 }
@@ -33,9 +33,7 @@ struct ContentView: View {
                     
                     let row = Int(floor(y * CGFloat(drumMachine.size.rows)))
                     let col = Int(floor(x * CGFloat(drumMachine.size.columns)))
-                    
-                    let audio = drumMachine.audios[row][col]
-                    drumMachine.play(audio)
+                    drumMachine.playSample(at: GridPoisition(column: col, row: row))
                 } onTouchUp: { touch in
                 }
             )
@@ -48,7 +46,7 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         let drumMachine = DrumMachine()
         return Group {
-            SquarePad(drumMachine: drumMachine, position: GridPoisition(column: 0, row: 0   ), audio: Sample(state: .empty))
+            SquarePad(drumMachine: drumMachine, position: GridPoisition(column: 0, row: 0   ), slot: .empty)
                 .padding()
                 .frame(width: 100, height: 100, alignment: .center)
             ContentView(drumMachine: DrumMachine(), trackPadEnabled: false)

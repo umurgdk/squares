@@ -25,7 +25,7 @@ struct GridPoisition {
 
 @MainActor
 class DrumMachine: ObservableObject {
-    @Published public private(set) var audios: [[Sample]]
+    @Published public private(set) var slots: [[SampleSlot]]
     @Published public private(set) var nowPlaying: [Sample.ID: TimeInterval] = [:]
     
     private let waveformGenerator = WaveformGenerator()
@@ -35,7 +35,7 @@ class DrumMachine: ObservableObject {
     public let size: GridSize
     public init(size: GridSize = .macbookPro13) {
         self.size = size
-        audios = (0..<size.rows).map { _ in (0..<size.columns).map { _ in Sample() } }
+        slots = Array(repeating: Array(repeating: SampleSlot.empty, count: size.columns), count: size.rows)
         
         audioEngine.output = mixer
         try! audioEngine.start()
@@ -51,46 +51,37 @@ class DrumMachine: ObservableObject {
         }
     }
     
-    public func play(_ audio: Sample) {
-        guard case let .ready(player) = audio.state else { return }
-        nowPlaying[audio.id] = Date.now.timeIntervalSince1970
-        player.play()
+    public func playSample(at position: GridPoisition) {
+        if case let .ready(sample) = slots[position.row][position.column] {
+            sample.sampler.play()
+        }
     }
     
-    public func removePlaying(_ audio: Sample) {
-        nowPlaying.removeValue(forKey: audio.id)
-        guard case let .ready(player) = audio.state else { return }
-        player.seek(time: 0)
+    public func removePlaying(_ sample: Sample) {
     }
     
     public func loadAudio(url: URL, at position: GridPoisition) {
-        let audio = audios[position.row][position.column]
-        if case let .ready(playerNode) = audio.state {
-            mixer.removeInput(playerNode)
+        let slot = slots[position.row][position.column]
+        if case let .ready(sample) = slot {
+            mixer.removeInput(sample.sampler)
         }
         
         Task {
             do {
-                var audio = audio
-                let playerNode = AudioPlayer()
-                try playerNode.load(url: url, buffered: true)
-                mixer.addInput(playerNode)
+                let sampler = AppleSampler(file: nil)
+                let audioFile = try AVAudioFile(forReading: url)
+                try sampler.loadAudioFile(audioFile)
+                mixer.addInput(sampler)
                 
                 let fileName = url.deletingPathExtension().pathComponents.last ?? ""
-                
-                audio.state = .ready(playerNode)
-                audio.name = fileName.uppercased()
-                updateAudio(audio, at: position)
-                
-                playerNode.completionHandler = { [weak self, audio] in
-                    DispatchQueue.main.async { [weak self, audio] in self?.removePlaying(audio)}
-                }
+                var sample = Sample(sampler: sampler, duration: audioFile.duration, name: fileName.uppercased())
+                updateSlot(.ready(sample), at: position)
                 
                 // TODO: Waveform is huge, needs to be downsampled and normalized
-                if let buffer = playerNode.buffer {
+                if let buffer = audioFile.toAVAudioPCMBuffer() {
                     let waveform = try await waveformGenerator.waveform(from: buffer, targetLength: 32)
-                    audio.waveform = .ready(waveform)
-                    updateAudio(audio, at: position)
+                    sample.waveform = .ready(waveform)
+                    updateSlot(.ready(sample), at: position)
                 }
             } catch {
                 NSAlert(error: error).runModal()
@@ -98,8 +89,8 @@ class DrumMachine: ObservableObject {
         }
     }
     
-    private func updateAudio(_ audio: Sample, at position: GridPoisition) {
-        audios[position.row][position.column] = audio
+    private func updateSlot(_ slot: SampleSlot, at position: GridPoisition) {
+        slots[position.row][position.column] = slot
     }
 }
 

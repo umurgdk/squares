@@ -11,10 +11,10 @@ import AudioKitUI
 struct SquarePad: View  {
     @ObservedObject var drumMachine: DrumMachine
     let position: GridPoisition
-    let audio: Sample
+    let slot: SampleSlot
     
     var isEmpty: Bool {
-        if case .empty = audio.state { return true }
+        if case .empty = slot { return true }
         return false
     }
     
@@ -23,7 +23,7 @@ struct SquarePad: View  {
     @State var playTime: Double? = nil
     var playProgress: Double? {
         guard
-            case let .ready(player) = audio.state,
+            case let .ready(player) = slot,
             let playTime = playTime
         else {
             return nil
@@ -35,19 +35,20 @@ struct SquarePad: View  {
     var body: some View {
         ZStack(alignment: .topLeading) {
             SquareBackground(isEmpty: isEmpty, isDropTarget: isDropTarget, playProgress: playProgress)
-            HStack {
-                Text(audio.name)
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .padding([.horizontal, .vertical], 8)
-            }
-            switch audio.state {
+            switch slot {
             case .empty:
                 EmptyView()
             case .loading:
                 ProgressView().controlSize(.small)
-            case .ready:
-                switch audio.waveform {
+            case .ready(let sample):
+                HStack {
+                    Text(sample.name)
+                        .font(.subheadline)
+                        .foregroundColor(.secondary)
+                        .padding([.horizontal, .vertical], 8)
+                }
+                
+                switch sample.waveform {
                 case .empty:
                     EmptyView()
                 case .generating:
@@ -72,15 +73,15 @@ struct SquarePad: View  {
             
             return true
         }
-        .onChange(of: drumMachine.nowPlaying[audio.id]) { isPlayingAt in
-            if isPlayingAt == nil {
-                playTime = nil
-                self.timer.upstream.connect().cancel()
-            } else {
-                playTime = 0
-                self.timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
-            }
-        }
+//        .onChange(of: drumMachine.nowPlaying[audio.id]) { isPlayingAt in
+//            if isPlayingAt == nil {
+//                playTime = nil
+//                self.timer.upstream.connect().cancel()
+//            } else {
+//                playTime = 0
+//                self.timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
+//            }
+//        }
         .onReceive(timer) { _ in
             withAnimation {
                 playTime = playTime.map { $0 + 0.1 } ?? 0
