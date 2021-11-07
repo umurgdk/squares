@@ -7,11 +7,17 @@
 
 import SwiftUI
 
-@main
+@main @MainActor
 struct SquaresApp: App {
+    @Environment(\.scenePhase) var scenePhase
+    @StateObject var drumMachine = DrumMachine()
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            ContentView(drumMachine: drumMachine)
+        }
+        .onChange(of: scenePhase) { newValue in
+            drumMachine.windowStatusDidChange(isActive: newValue == .active)
         }
     }
 }
