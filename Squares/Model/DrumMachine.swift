@@ -17,7 +17,7 @@ struct NowPlaying {
 }
 
 @MainActor
-class DrumMachine: ObservableObject, SamplerTapDelegate {
+class DrumMachine: ObservableObject {
     public let grid: SlotGrid
     public var slotChangePublisher: AnyPublisher<GridPosition, Never> { grid.slotChangePublisher }
     
@@ -98,14 +98,6 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
             } catch {
                 NSAlert(error: error).runModal()
             }
-        }
-    }
-    
-    func samplerDidStopPlayingSample(id: Sample.ID) {
-        nowPlayingSignal.send(NowPlaying(sampleID: id, isPlaying: false))
-        samplePlayStartTimes.removeValue(forKey: id)
-        if let sample = grid.sampleBy(id: id) {
-            print("Sample[\(sample.name)] did stop playing")
         }
     }
 }
