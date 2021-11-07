@@ -10,5 +10,5 @@ import Foundation
 enum SampleSlot {
     case empty
     case loading
-    case ready(Sample)
+    case ready(Sample.ID)
 }

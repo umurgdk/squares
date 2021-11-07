@@ -54,25 +54,35 @@ struct GridPositionEnumerator: Sequence, IteratorProtocol {
 }
 
 class SlotGrid: ObservableObject {
-    private var slots: [[SampleSlot]]
-    private let slotChangeSignal = PassthroughSubject<GridPosition, Never>()
     public var slotChangePublisher: AnyPublisher<GridPosition, Never> { slotChangeSignal.eraseToAnyPublisher() }
+    private let slotChangeSignal = PassthroughSubject<GridPosition, Never>()
     
     public let size: GridSize
+    private var slots: [[SampleSlot]]
+    private var samples: [Sample.ID: Sample] = [:]
     public init(size: GridSize = .macbookPro13) {
         self.size = size
         self.slots = Array(repeating: Array(repeating: SampleSlot.empty, count: size.columns), count: size.rows)
     }
     
+    @inline(__always)
     public func slot(at position: GridPosition) -> SampleSlot {
         slots[position.row][position.column]
     }
     
+    @inline(__always)
     public func setSlot(_ slot: SampleSlot, at position: GridPosition) {
         slots[position.row][position.column] = slot
         slotChangeSignal.send(position)
     }
     
+    @inline(__always)
+    public func setSample(_ sample: Sample, at position: GridPosition) {
+        samples[sample.id] = sample
+        setSlot(.ready(sample.id), at: position)
+    }
+    
+    @inline(__always)
     public func swapSlots(_ lhs: GridPosition, _ rhs: GridPosition) {
         let leftSlot = slot(at: lhs)
         let rightSlot = slot(at: rhs)
@@ -81,22 +91,18 @@ class SlotGrid: ObservableObject {
         setSlot(leftSlot, at: rhs)
     }
     
+    @inline(__always)
     public func sample(at position: GridPosition) -> Sample? {
-        if case let .ready(sample) = slot(at: position) {
-            return sample
+        if case let .ready(sampleID) = slot(at: position) {
+            return samples[sampleID]
         }
         
         return nil
     }
     
+    @inline(__always)
     public func sampleBy(id sampleID: Sample.ID) -> Sample? {
-        for position in size.validPositions {
-            if let sample = sample(at: position) {
-                return sample
-            }
-        }
-        
-        return nil
+        samples[sampleID]
     }
     
     public func position(of sampleID: Sample.ID) -> GridPosition? {

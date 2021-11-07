@@ -14,8 +14,8 @@ struct SquarePad: View {
     let position: GridPosition
     
     @State private var slot: SampleSlot
+    @State private var sample: Sample?
     @State private var isDropTarget = false
-    @State private var timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
     @State private var playProgress: Double? = nil
     
     var isEmpty: Bool {
@@ -23,18 +23,25 @@ struct SquarePad: View {
         return false
     }
     
-    var sample: Sample? {
-        if case let .ready(sample) = slot {
-            return sample
-        }
-        
-        return nil
+    init(drumMachine: DrumMachine, position: GridPosition) {
+        self.position = position
+        self._drumMachine = ObservedObject(initialValue: drumMachine)
+        self._slot = State(initialValue: drumMachine.grid.slot(at: position))
+        self._sample = State(initialValue: drumMachine.grid.sample(at: position))
     }
     
-    init(drumMachine: DrumMachine, position: GridPosition) {
-        self._drumMachine = ObservedObject(initialValue: drumMachine)
-        self.position = position
-        self._slot = State(initialValue: drumMachine.grid.slot(at: position))
+    func sampleView(_ sample: Sample) -> some View {
+        Group {
+            HStack {
+                Text(sample.name)
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                    .padding([.horizontal, .vertical], 8)
+            }
+            
+            WaveformView(waveform: sample.waveform)
+                .padding(EdgeInsets(top: 32, leading: 8, bottom: 16, trailing: 8))
+        }
     }
     
     var body: some View {
@@ -45,16 +52,10 @@ struct SquarePad: View {
                 EmptyView()
             case .loading:
                 ProgressView().controlSize(.small)
-            case .ready(let sample):
-                HStack {
-                    Text(sample.name)
-                        .font(.subheadline)
-                        .foregroundColor(.secondary)
-                        .padding([.horizontal, .vertical], 8)
+            case .ready:
+                if let sample = sample {
+                    sampleView(sample)
                 }
-                
-                WaveformView(waveform: sample.waveform)
-                    .padding(EdgeInsets(top: 32, leading: 8, bottom: 16, trailing: 8))
             }
         }
         .onOptionalDrag(sample) { sample in
@@ -80,28 +81,32 @@ struct SquarePad: View {
             
             return true
         }
-        .onReceive(drumMachine.nowPlayingPublisher) { status in
-            guard status.sampleID == drumMachine.grid.sample(at: position)?.id else { return }
-            
+        .onReceive(drumMachine.nowPlayingPublisher(for: sample?.id)) { status in
+            guard let sample = sample else { return }
+
             if status.isPlaying {
-                playProgress = drumMachine.currentPlayProgress(at: position)
-                timer = Timer.publish(every: 0.1, on: .current, in: .common).autoconnect()
-            } else {
-                timer.upstream.connect().cancel()
+                playProgress = drumMachine.currentPlayProgress(of: sample.id)
+                let currentTime = sample.duration * (playProgress ?? 0)
+                let remainingTime = sample.duration - currentTime
+                withAnimation(Animation.linear(duration: remainingTime)) {
+                    playProgress = 1
+                }
             }
         }
         .onReceive(drumMachine.slotChangePublisher) { changedPosition in
             guard changedPosition == position else { return }
             slot = drumMachine.grid.slot(at: position)
+            sample = drumMachine.grid.sample(at: position)
         }
-        .onReceive(timer) { _ in
-            if let progress = drumMachine.currentPlayProgress(at: position) {
-                withAnimation { playProgress = progress }
-            } else {
-                playProgress = nil
-                timer.upstream.connect().cancel()
-            }
-        }
-        .onAppear { timer.upstream.connect().cancel() }
+    }
+}
+
+extension ShapeStyle where Self == Color {
+    static var random: Color {
+        Color(
+            red: .random(in: 0...1),
+            green: .random(in: 0...1),
+            blue: .random(in: 0...1)
+        )
     }
 }

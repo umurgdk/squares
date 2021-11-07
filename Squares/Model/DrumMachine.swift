@@ -21,7 +21,6 @@ class DrumMachine: ObservableObject {
     public let grid: SlotGrid
     public var slotChangePublisher: AnyPublisher<GridPosition, Never> { grid.slotChangePublisher }
     
-    public var nowPlayingPublisher: AnyPublisher<NowPlaying, Never> { nowPlayingSignal.eraseToAnyPublisher() }
     private let nowPlayingSignal = PassthroughSubject<NowPlaying, Never>()
                                         
     private var samplePlayStartTimes: [Sample.ID: TimeInterval] = [:]
@@ -45,15 +44,26 @@ class DrumMachine: ObservableObject {
         }
     }
     
-    public func currentPlayProgress(at position: GridPosition) -> Double? {
+    public func nowPlayingPublisher(for sampleID: Sample.ID?) -> AnyPublisher<NowPlaying, Never> {
+        guard let sampleID = sampleID else {
+            return [].publisher.eraseToAnyPublisher()
+        }
+        
+        return nowPlayingSignal.filter { $0.sampleID == sampleID }.eraseToAnyPublisher()
+    }
+    
+    public func currentPlayProgress(of sampleID: Sample.ID) -> Double? {
         guard
-            let sample = grid.sample(at: position),
+            let sample = grid.sampleBy(id: sampleID),
             let startTime = samplePlayStartTimes[sample.id]
         else { return nil }
         
         let currentTime = Date.now.timeIntervalSince1970 - startTime
-        let progress = currentTime / sample.duration
-        return progress > 1 ? nil : progress
+        if currentTime > sample.duration {
+            return nil
+        }
+        
+        return currentTime / sample.duration
     }
     
     public func playSample(at position: GridPosition) {
@@ -78,6 +88,8 @@ class DrumMachine: ObservableObject {
             samplePlayStartTimes.removeValue(forKey: sample.id)
         }
         
+        grid.setSlot(.empty, at: position)
+        
         Task {
             do {
                 let sampler = AppleSampler(file: nil)
@@ -87,13 +99,13 @@ class DrumMachine: ObservableObject {
                 
                 let fileName = url.deletingPathExtension().pathComponents.last ?? ""
                 var sample = Sample(sampler: sampler, duration: audioFile.duration, name: fileName.uppercased())
-                grid.setSlot(.ready(sample), at: position)
+                grid.setSample(sample, at: position)
                 
                 // TODO: Waveform is huge, needs to be downsampled and normalized
                 if let buffer = audioFile.toAVAudioPCMBuffer() {
                     let waveform = try await waveformGenerator.waveform(from: buffer, targetLength: 32)
                     sample.waveform = .ready(waveform)
-                    grid.setSlot(.ready(sample), at: position)
+                    grid.setSample(sample, at: position)
                 }
             } catch {
                 NSAlert(error: error).runModal()
