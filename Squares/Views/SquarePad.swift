@@ -5,6 +5,7 @@
 //  Created by Umur Gedik on 6.11.2021.
 //
 
+import UniformTypeIdentifiers
 import SwiftUI
 import AudioKitUI
 
@@ -64,16 +65,10 @@ struct SquarePad: View  {
                 }
             }
         }
-        .onDrop(of: [.audio, .fileURL], isTargeted: $isDropTarget) { itemProvider in
-            guard let itemProvider = itemProvider.first else { return false }
-            _ = itemProvider.loadObject(ofClass: URL.self) { reading, error in
-                if let error = error {
-                    NSAlert(error: error).runModal()
-                    return
-                }
-                
-                guard let url = reading else { return }
-                drumMachine.loadAudio(url: url, at: position)
+        .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { itemProviders in
+            Task {
+                let urls = await itemProviders.resolveFileURLs()
+                drumMachine.loadAudio(urls: urls, at: position)
             }
             
             return true
@@ -133,7 +128,7 @@ struct SquareBackground: View {
     var body: some View {
         if isEmpty {
             RoundedRectangle(cornerRadius: 8)
-                .stroke(isDropTarget ? Color.blue : Color.black.opacity(0.1), style: emptyStrokeStyle)
+                .stroke(isDropTarget ? Color.blue : Color.primary.opacity(0.1), style: emptyStrokeStyle)
                 .background(
                     RoundedRectangle(cornerRadius: 8)
                         .fill(fillColor)

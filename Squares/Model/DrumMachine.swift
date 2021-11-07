@@ -19,8 +19,10 @@ struct GridSize {
 }
 
 struct GridPoisition {
-    let column: Int
-    let row: Int
+    var column: Int
+    var row: Int
+    
+    static var zero: Self { .init(column: 0, row: 0) }
 }
 
 @MainActor
@@ -59,6 +61,21 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
         }
     }
     
+    public func loadAudio(urls: [URL], at position: GridPoisition = .zero) {
+        var position = position
+        for url in urls {
+            loadAudio(url: url, at: position)
+            position.column += 1
+            
+            if position.column >= size.columns {
+                position.column = 0
+                position.row += 1
+            }
+            
+            guard position.row < size.rows, position.column < size.columns else { return }
+        }
+    }
+    
     public func loadAudio(url: URL, at position: GridPoisition) {
         let slot = slots[position.row][position.column]
         if case let .ready(sample) = slot {
@@ -68,6 +85,7 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
         }
         
         Task {
+            print("Loading audio from url:", url)
             do {
                 let sampler = AppleSampler(file: nil)
                 let audioFile = try AVAudioFile(forReading: url)
