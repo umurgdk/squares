@@ -8,6 +8,20 @@
 import SwiftUI
 import AudioKitUI
 
+struct WaveformView: View {
+    let waveform: Sample.Waveform
+    var body: some View {
+        switch waveform {
+        case .empty:
+            EmptyView()
+        case .generating:
+            ProgressView().controlSize(.small)
+        case .ready(let dataPoints):
+            WaveformShape(waveform: dataPoints)
+        }
+    }
+}
+
 struct WaveformShape: Shape {
     let waveform: [Float]
     
@@ -50,47 +64,9 @@ struct WaveformShape: Shape {
     }
 }
 
-struct WaveformView: NSViewRepresentable {
-    let waveform: [Float]
-    
-    func makeNSView(context: Context) -> NativeView {
-        let view = NativeView(waveform: waveform)
-        return view
-    }
-    
-    func updateNSView(_ nsView: NativeView, context: Context) {
-        nsView.waveform = waveform
-    }
-    
-    class NativeView: NSView {
-        var waveform: [Float] = [] {
-            didSet { waveformLayer.table = waveform }
-        }
-        
-        var waveformLayer = WaveformLayer(table: [], fillColor: .white, strokeColor: .white, isMirrored: true)
-        
-        convenience init(waveform: [Float]) {
-            self.init()
-            self.waveform = waveform
-            wantsLayer = true
-            waveformLayer.drawsAsynchronously = false
-            waveformLayer.table = waveform
-            layer?.addSublayer(waveformLayer)
-        }
-        
-        override func layout() {
-            super.layout()
-            CATransaction.begin()
-            CATransaction.setDisableActions(true)
-            waveformLayer.frame = bounds
-            CATransaction.commit()
-        }
-    }
-}
-
 struct WaveformView_Previews: PreviewProvider {
     static var previews: some View {
-        WaveformView(waveform: [10.3, 4.8,0.6,0.4,0.3,0.1,0.04,0])
+        WaveformView(waveform: .ready([10.3, 4.8,0.6,0.4,0.3,0.1,0.04,0]))
             .frame(width: 100, height: 100, alignment: .center)
     }
 }

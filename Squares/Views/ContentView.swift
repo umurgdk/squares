@@ -11,15 +11,16 @@ struct ContentView: View {
     @StateObject var drumMachine: DrumMachine
     public let trackPadEnabled: Bool
     
+    var size: GridSize { drumMachine.grid.size }
+    
     var body: some View {
         GeometryReader { geom in
             VStack(spacing: 8) {
-                ForEach(0..<drumMachine.size.rows) { row in
+                ForEach(0..<size.rows) { row in
                     HStack(spacing: 8) {
-                        ForEach(0..<drumMachine.size.columns) { col in
+                        ForEach(0..<size.columns) { col in
                             SquarePad(drumMachine: drumMachine,
-                                      position: GridPoisition(column: col, row: row),
-                                      slot: drumMachine.slots[row][col])
+                                      position: GridPosition(column: col, row: row))
                         }
                     }
                 }
@@ -31,9 +32,9 @@ struct ContentView: View {
                     let y = (1 - touch.normalizedPosition.y)
                     let x = touch.normalizedPosition.x
                     
-                    let row = Int(floor(y * CGFloat(drumMachine.size.rows)))
-                    let col = Int(floor(x * CGFloat(drumMachine.size.columns)))
-                    drumMachine.playSample(at: GridPoisition(column: col, row: row))
+                    let row = Int(floor(y * CGFloat(size.rows)))
+                    let col = Int(floor(x * CGFloat(size.columns)))
+                    drumMachine.playSample(at: .init(column: col, row: row))
                 } onTouchUp: { touch in
                 }
             )
@@ -46,7 +47,7 @@ struct ContentView_Previews: PreviewProvider {
     static var previews: some View {
         let drumMachine = DrumMachine()
         return Group {
-            SquarePad(drumMachine: drumMachine, position: GridPoisition(column: 0, row: 0   ), slot: .empty)
+            SquarePad(drumMachine: drumMachine, position: GridPosition(column: 0, row: 0))
                 .padding()
                 .frame(width: 100, height: 100, alignment: .center)
             ContentView(drumMachine: DrumMachine(), trackPadEnabled: false)

@@ -9,37 +9,28 @@ import Foundation
 import AVFoundation
 import AppKit
 import AudioKit
+import Combine
 
-struct GridSize {
-    let columns: Int
-    let rows: Int
-    
-    static let macbookPro13 = GridSize(columns: 4, rows: 3)
-    var positions: [GridPoisition] { (0..<rows).flatMap { row in (0..<columns).map { col in GridPoisition(column: col, row: row) }} }
-}
-
-struct GridPoisition {
-    var column: Int
-    var row: Int
-    
-    static var zero: Self { .init(column: 0, row: 0) }
+struct NowPlaying {
+    let sampleID: Sample.ID
+    let isPlaying: Bool
 }
 
 @MainActor
 class DrumMachine: ObservableObject, SamplerTapDelegate {
-    @Published public private(set) var slots: [[SampleSlot]]
-    @Published public private(set) var nowPlaying: [Sample.ID: TimeInterval] = [:]
+    public let grid: SlotGrid
+    public var slotChangePublisher: AnyPublisher<GridPosition, Never> { grid.slotChangePublisher }
     
+    public var nowPlayingPublisher: AnyPublisher<NowPlaying, Never> { nowPlayingSignal.eraseToAnyPublisher() }
+    private let nowPlayingSignal = PassthroughSubject<NowPlaying, Never>()
+                                        
+    private var samplePlayStartTimes: [Sample.ID: TimeInterval] = [:]
     private let waveformGenerator = WaveformGenerator()
     private let audioEngine = AudioEngine()
     private let mixer = Mixer()
-    private var samplerTaps: [Sample.ID: SamplerTap] = [:]
     
-    public let size: GridSize
     public init(size: GridSize = .macbookPro13) {
-        self.size = size
-        slots = Array(repeating: Array(repeating: SampleSlot.empty, count: size.columns), count: size.rows)
-        
+        grid = SlotGrid(size: size)
         audioEngine.output = mixer
         try! audioEngine.start()
     }
@@ -54,38 +45,40 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
         }
     }
     
-    public func playSample(at position: GridPoisition) {
-        if case let .ready(sample) = slots[position.row][position.column] {
+    public func currentPlayProgress(at position: GridPosition) -> Double? {
+        guard
+            let sample = grid.sample(at: position),
+            let startTime = samplePlayStartTimes[sample.id]
+        else { return nil }
+        
+        let currentTime = Date.now.timeIntervalSince1970 - startTime
+        let progress = currentTime / sample.duration
+        return progress > 1 ? nil : progress
+    }
+    
+    public func playSample(at position: GridPosition) {
+        if let sample = grid.sample(at: position) {
             sample.sampler.play()
-            nowPlaying[sample.id] = Date.now.timeIntervalSince1970
+            samplePlayStartTimes[sample.id] = Date.now.timeIntervalSince1970
+            nowPlayingSignal.send(NowPlaying(sampleID: sample.id, isPlaying: true))
         }
     }
     
-    public func loadAudio(urls: [URL], at position: GridPoisition = .zero) {
-        var position = position
+    public func loadAudio(urls: [URL], at position: GridPosition = .zero) {
+        var positions = grid.size.validPositions.startingFrom(position)
         for url in urls {
+            guard let position = positions.next() else { return }
             loadAudio(url: url, at: position)
-            position.column += 1
-            
-            if position.column >= size.columns {
-                position.column = 0
-                position.row += 1
-            }
-            
-            guard position.row < size.rows, position.column < size.columns else { return }
         }
     }
     
-    public func loadAudio(url: URL, at position: GridPoisition) {
-        let slot = slots[position.row][position.column]
-        if case let .ready(sample) = slot {
+    public func loadAudio(url: URL, at position: GridPosition) {
+        if let sample = grid.sample(at: position) {
             mixer.removeInput(sample.sampler)
-            samplerTaps[sample.id]?.dispose()
-            samplerTaps.removeValue(forKey: sample.id)
+            samplePlayStartTimes.removeValue(forKey: sample.id)
         }
         
         Task {
-            print("Loading audio from url:", url)
             do {
                 let sampler = AppleSampler(file: nil)
                 let audioFile = try AVAudioFile(forReading: url)
@@ -94,18 +87,13 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
                 
                 let fileName = url.deletingPathExtension().pathComponents.last ?? ""
                 var sample = Sample(sampler: sampler, duration: audioFile.duration, name: fileName.uppercased())
-                updateSlot(.ready(sample), at: position)
-                
-                let tap = SamplerTap(input: sampler, sampleID: sample.id)
-                tap.delegate = self
-                samplerTaps[sample.id] = tap
-                tap.start()
+                grid.setSlot(.ready(sample), at: position)
                 
                 // TODO: Waveform is huge, needs to be downsampled and normalized
                 if let buffer = audioFile.toAVAudioPCMBuffer() {
                     let waveform = try await waveformGenerator.waveform(from: buffer, targetLength: 32)
                     sample.waveform = .ready(waveform)
-                    updateSlot(.ready(sample), at: position)
+                    grid.setSlot(.ready(sample), at: position)
                 }
             } catch {
                 NSAlert(error: error).runModal()
@@ -113,23 +101,10 @@ class DrumMachine: ObservableObject, SamplerTapDelegate {
         }
     }
     
-    private func updateSlot(_ slot: SampleSlot, at position: GridPoisition) {
-        slots[position.row][position.column] = slot
-    }
-    
-    private func sampleWithID(_ id: Sample.ID) -> Sample? {
-        for slot in slots.flatMap({ $0 }) {
-            if case let .ready(sample) = slot, sample.id == id {
-                return sample
-            }
-        }
-        
-        return nil
-    }
-    
     func samplerDidStopPlayingSample(id: Sample.ID) {
-        nowPlaying.removeValue(forKey: id)
-        if let sample = sampleWithID(id) {
+        nowPlayingSignal.send(NowPlaying(sampleID: id, isPlaying: false))
+        samplePlayStartTimes.removeValue(forKey: id)
+        if let sample = grid.sampleBy(id: id) {
             print("Sample[\(sample.name)] did stop playing")
         }
     }
