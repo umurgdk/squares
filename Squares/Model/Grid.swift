@@ -73,6 +73,14 @@ class SlotGrid: ObservableObject {
         slotChangeSignal.send(position)
     }
     
+    public func swapSlots(_ lhs: GridPosition, _ rhs: GridPosition) {
+        let leftSlot = slot(at: lhs)
+        let rightSlot = slot(at: rhs)
+        
+        setSlot(rightSlot, at: lhs)
+        setSlot(leftSlot, at: rhs)
+    }
+    
     public func sample(at position: GridPosition) -> Sample? {
         if case let .ready(sample) = slot(at: position) {
             return sample
@@ -85,6 +93,16 @@ class SlotGrid: ObservableObject {
         for position in size.validPositions {
             if let sample = sample(at: position) {
                 return sample
+            }
+        }
+        
+        return nil
+    }
+    
+    public func position(of sampleID: Sample.ID) -> GridPosition? {
+        for position in size.validPositions {
+            if let sample = sample(at: position), sample.id == sampleID {
+                return position
             }
         }
         

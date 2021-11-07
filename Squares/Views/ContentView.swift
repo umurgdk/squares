@@ -26,18 +26,25 @@ struct ContentView: View {
                 }
             }
             .padding()
-            .overlay(
-                TouchInterceptor { touch in
-                    guard trackPadEnabled else { return }
-                    let y = (1 - touch.normalizedPosition.y)
-                    let x = touch.normalizedPosition.x
-                    
-                    let row = Int(floor(y * CGFloat(size.rows)))
-                    let col = Int(floor(x * CGFloat(size.columns)))
-                    drumMachine.playSample(at: .init(column: col, row: row))
-                } onTouchUp: { touch in
-                }
-            )
+            .overlay(trackPadOverlay)
+        }
+    }
+    
+    @ViewBuilder
+    var trackPadOverlay: some View {
+        if trackPadEnabled {
+            TouchInterceptor { touch in
+                guard trackPadEnabled else { return }
+                let y = (1 - touch.normalizedPosition.y)
+                let x = touch.normalizedPosition.x
+                
+                let row = Int(floor(y * CGFloat(size.rows)))
+                let col = Int(floor(x * CGFloat(size.columns)))
+                drumMachine.playSample(at: .init(column: col, row: row))
+            } onTouchUp: { touch in
+            }
+        } else {
+            EmptyView()
         }
     }
 }

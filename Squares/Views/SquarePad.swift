@@ -23,6 +23,14 @@ struct SquarePad: View {
         return false
     }
     
+    var sample: Sample? {
+        if case let .ready(sample) = slot {
+            return sample
+        }
+        
+        return nil
+    }
+    
     init(drumMachine: DrumMachine, position: GridPosition) {
         self._drumMachine = ObservedObject(initialValue: drumMachine)
         self.position = position
@@ -49,8 +57,23 @@ struct SquarePad: View {
                     .padding(EdgeInsets(top: 32, leading: 8, bottom: 16, trailing: 8))
             }
         }
-        .onDrop(of: [.fileURL], isTargeted: $isDropTarget) { itemProviders in
+        .onOptionalDrag(sample) { sample in
+            NSItemProvider(object: TransferrableSampleID(sampleID: sample.id))
+        } preview: {
+            self.opacity(0.5)
+        }
+        .onDrop(of: [.fileURL, Sample.uti], isTargeted: $isDropTarget) { itemProviders in
             Task {
+                if let sampleIDProvider = itemProviders.first(where: { $0.hasItemConformingToTypeIdentifier(Sample.uti.identifier) }) {
+                    guard
+                        let sampleID = await [sampleIDProvider].resolveSampleIDs().first,
+                        let draggedSamplePosition = drumMachine.grid.position(of: sampleID)
+                    else { return }
+                    
+                    drumMachine.grid.swapSlots(position, draggedSamplePosition)
+                    return
+                }
+                
                 let urls = await itemProviders.resolveFileURLs()
                 drumMachine.loadAudio(urls: urls, at: position)
             }
