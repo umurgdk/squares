@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		A9261A0C27373F0100177368 /* TouchInterceptor.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9261A0B27373F0100177368 /* TouchInterceptor.swift */; };
 		A9261A0E27380F3500177368 /* SampleSlot.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9261A0D27380F3500177368 /* SampleSlot.swift */; };
-		A9261A132738269A00177368 /* NSItemProvider+resolveFileURLs.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9261A122738269A00177368 /* NSItemProvider+resolveFileURLs.swift */; };
+		A9261A132738269A00177368 /* NSItemProvider+resolve.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9261A122738269A00177368 /* NSItemProvider+resolve.swift */; };
 		A9261A172738324F00177368 /* Grid.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9261A162738324F00177368 /* Grid.swift */; };
 		A94A7AF32738486500B89E8E /* SquarePadBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94A7AF22738486500B89E8E /* SquarePadBackground.swift */; };
 		A94A7AF727385B6F00B89E8E /* OptionalDrag.swift in Sources */ = {isa = PBXBuildFile; fileRef = A94A7AF627385B6F00B89E8E /* OptionalDrag.swift */; };
@@ -30,7 +30,7 @@
 /* Begin PBXFileReference section */
 		A9261A0B27373F0100177368 /* TouchInterceptor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TouchInterceptor.swift; sourceTree = "<group>"; };
 		A9261A0D27380F3500177368 /* SampleSlot.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SampleSlot.swift; sourceTree = "<group>"; };
-		A9261A122738269A00177368 /* NSItemProvider+resolveFileURLs.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+resolveFileURLs.swift"; sourceTree = "<group>"; };
+		A9261A122738269A00177368 /* NSItemProvider+resolve.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "NSItemProvider+resolve.swift"; sourceTree = "<group>"; };
 		A9261A162738324F00177368 /* Grid.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Grid.swift; sourceTree = "<group>"; };
 		A94A7AF22738486500B89E8E /* SquarePadBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SquarePadBackground.swift; sourceTree = "<group>"; };
 		A94A7AF627385B6F00B89E8E /* OptionalDrag.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OptionalDrag.swift; sourceTree = "<group>"; };
@@ -65,7 +65,7 @@
 		A9261A112738268300177368 /* AssetLoading */ = {
 			isa = PBXGroup;
 			children = (
-				A9261A122738269A00177368 /* NSItemProvider+resolveFileURLs.swift */,
+				A9261A122738269A00177368 /* NSItemProvider+resolve.swift */,
 			);
 			path = AssetLoading;
 			sourceTree = "<group>";
@@ -226,7 +226,7 @@
 				A94A7AF727385B6F00B89E8E /* OptionalDrag.swift in Sources */,
 				A9C72CAB2736BE60007C2645 /* WaveformShape.swift in Sources */,
 				A9261A0C27373F0100177368 /* TouchInterceptor.swift in Sources */,
-				A9261A132738269A00177368 /* NSItemProvider+resolveFileURLs.swift in Sources */,
+				A9261A132738269A00177368 /* NSItemProvider+resolve.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

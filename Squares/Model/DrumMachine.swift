@@ -116,11 +116,38 @@ class DrumMachine: ObservableObject {
         var positions = grid.size.validPositions.startingFrom(position)
         for url in urls {
             guard let position = positions.next() else { return }
+            
             loadAudio(url: url, at: position)
         }
     }
     
+    private func loadAudioFilesInside(directory directoryURL: URL, at position: GridPosition) {
+        var positions = grid.size.validPositions.startingFrom(position)
+        
+        do {
+            let filePaths = try FileManager.default.contentsOfDirectory(atPath: directoryURL.path)
+            for filePath in filePaths {
+                let ext = (filePath as NSString).pathExtension
+                guard let uti = UTType(filenameExtension: ext) else { continue }
+                
+                if uti.conforms(to: .audio) {
+                    guard let position = positions.next() else { return }
+                    loadAudio(url: URL(fileURLWithPath: filePath, relativeTo: directoryURL), at: position)
+                }
+            }
+        } catch {
+            NSAlert(error: error).runModal()
+        }
+    }
+    
     public func loadAudio(url: URL, at position: GridPosition) {
+        var isDirectory: ObjCBool = .init(false)
+        
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory) else { return }
+        if isDirectory.boolValue {
+            return loadAudioFilesInside(directory: url, at: position)
+        }
+        
         if let sample = grid.sample(at: position) {
             mixer.removeInput(sample.sampler)
             samplePlayStartTimes.removeValue(forKey: sample.id)
@@ -146,7 +173,7 @@ class DrumMachine: ObservableObject {
                     grid.setSample(sample, at: position)
                 }
             } catch {
-                NSAlert(error: error).runModal()
+                DispatchQueue.main.async { NSAlert(error: error).runModal() }
             }
         }
     }
