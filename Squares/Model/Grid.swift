@@ -57,9 +57,14 @@ class SlotGrid: ObservableObject {
     public var slotChangePublisher: AnyPublisher<GridPosition, Never> { slotChangeSignal.eraseToAnyPublisher() }
     private let slotChangeSignal = PassthroughSubject<GridPosition, Never>()
     
+    @Published var numberOfSamples = 0
+    
     public let size: GridSize
     private var slots: [[SampleSlot]]
-    private var samples: [Sample.ID: Sample] = [:]
+    private var samples: [Sample.ID: Sample] = [:] {
+        didSet { numberOfSamples = samples.count }
+    }
+    
     public init(size: GridSize = .macbookPro13) {
         self.size = size
         self.slots = Array(repeating: Array(repeating: SampleSlot.empty, count: size.columns), count: size.rows)
