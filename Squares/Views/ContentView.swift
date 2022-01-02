@@ -27,7 +27,7 @@ struct ContentView: View {
             }
             .padding()
             .overlay(trackPadOverlay)
-        }
+        }.preferredColorScheme(.dark)
     }
     
     @ViewBuilder
